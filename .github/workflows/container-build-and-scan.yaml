@@ -8,10 +8,15 @@ on:
 
 jobs:
   build-and-scan:
+    name: "Wiz-cli Image Scan"
     runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write # Required for SARIF upload
+    env:
+      SCAN_PATH: "." # Set the relative path in the repo to build the image from
+      TAG: "my-app:latest" # Set the tag to use for the image
+      POLICY: "Default vulnerabilities policy" # Set the desired Wiz CLI policy to use
 
     steps:
     - name: Checkout Repository
@@ -29,7 +34,7 @@ jobs:
         file: Containerfile # Or Containerfile, adjust as needed
         push: false
         load: true
-        tags: my-app:latest # You can customize the tag
+        tags: $TAG # You can customize the tag
 
     - name: Download Wiz CLI
       run: curl -o wizcli https://downloads.wiz.io/wizcli/latest/wizcli-linux-amd64 && chmod +x wizcli
@@ -41,20 +46,14 @@ jobs:
         WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
 
     - name: Run wiz-cli docker image scan
-      run: ./wizcli docker scan --image $TAG --policy "$POLICY"
+      id: wiz-scan
+      # run: ./wizcli docker scan --image $TAG --policy "$POLICY"
+      run: ./wizcli docker scan --image $TAG --output wiz-vuln-scan.sarif,sarif"
 
     - name: Fetch digest of Docker image for Graph enrichment
       run: ./wizcli docker tag --image $TAG
 
-    - name: Run wizcli Scan
-      id: wiz-scan
-      run: |
-        echo "Scanning container image..."
-        # Replace 'my-app:latest' with the actual image name/tag
-        wizcli image scan --format sarif --output report.sarif my-app:latest
-        echo "Scan completed. SARIF report generated at report.sarif"
-
     - name: Upload SARIF results to GitHub Security
       uses: github/codeql-action/upload-sarif@v3
       with:
-        sarif_file: report.sarif
+        sarif_file: wiz-vuln-scan.sarif

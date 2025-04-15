@@ -48,7 +48,7 @@ jobs:
     - name: Run wiz-cli docker image scan
       id: wiz-scan
       # run: ./wizcli docker scan --image $TAG --policy "$POLICY"
-      run: ./wizcli docker scan --image $TAG --output wiz-vuln-scan.sarif,sarif"
+      run: ./wizcli docker scan --image $TAG --output wiz-vuln-scan.sarif,sarif
 
     - name: Fetch digest of Docker image for Graph enrichment
       run: ./wizcli docker tag --image $TAG

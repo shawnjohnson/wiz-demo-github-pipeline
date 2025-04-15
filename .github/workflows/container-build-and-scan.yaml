@@ -43,7 +43,7 @@ jobs:
         file: Containerfile # Or Containerfile, adjust as needed
         push: false
         load: true
-        tags: ${{ env.TAG }}
+        tags: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}"
 
     - name: Download Wiz CLI
       run: curl -o wizcli https://downloads.wiz.io/wizcli/latest/wizcli-linux-amd64 && chmod +x wizcli
@@ -57,17 +57,14 @@ jobs:
     - name: Run wiz-cli docker image scan
       id: wiz-scan
       # run: ./wizcli docker scan --image $TAG --policy "$POLICY"
-      run: ./wizcli docker scan --image $TAG --output wiz-vuln-scan.sarif,sarif
+      run: ./wizcli docker scan --image "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}" --output wiz-vuln-scan.sarif,sarif
 
     - name: Push Container Image
       id: push-image
       uses: docker/build-push-action@v5
       with:
-        context: . # Assuming Dockerfile/Containerfile is in the root
-        file: Containerfile
         push: true
-        load: true
-        tags: ${{ env.TAG }}
+        tags: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}"
 
     - name: Fetch digest of Docker image for Graph enrichment
       run: ./wizcli docker tag --image $TAG

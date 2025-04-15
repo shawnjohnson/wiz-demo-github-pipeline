@@ -15,7 +15,7 @@ jobs:
       security-events: write # Required for SARIF upload
     env:
       SCAN_PATH: "." # Set the relative path in the repo to build the image from
-      TAG: "my-app:latest" # Set the tag to use for the image
+      TAG: "latest" # Set the tag to use for the image
       POLICY: "Default vulnerabilities policy" # Set the desired Wiz CLI policy to use
       REGISTRY: ghcr.io
       IMAGE_NAME: ${{ github.repository }}

@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: write # Required for GitHub Package Repository
       security-events: write # Required for SARIF upload
     env:
       SCAN_PATH: "." # Set the relative path in the repo to build the image from

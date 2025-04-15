@@ -63,6 +63,11 @@ jobs:
          --output wiz-vuln-scan.sarif,sarif \
          --policy "$POLICY"
 
+    - name: Upload SARIF results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: wiz-vuln-scan.sarif
+
     - name: Push Container Image
       uses: docker/build-push-action@v6
       with:
@@ -70,9 +75,5 @@ jobs:
         tags: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}"
 
     - name: Fetch digest of Docker image for Graph enrichment
-      run: ./wizcli docker tag --image $TAG
+      run: ./wizcli docker tag --image "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}"
 
-    - name: Upload SARIF results to GitHub Security
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: wiz-vuln-scan.sarif

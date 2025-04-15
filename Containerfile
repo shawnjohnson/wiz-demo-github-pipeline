@@ -21,7 +21,7 @@ RUN CGO_ENABLED=0 go test -v
 RUN go build -o ./out/go-sample-app .
 
 # Start fresh from a smaller image
-FROM alpine:3.21 
+FROM alpine:3.7 # Pin to older version to demonstrate vulnerability scanning output 
 RUN apk add ca-certificates
 
 COPY --from=build_base /tmp/go-sample-app/out/go-sample-app /app/go-sample-app

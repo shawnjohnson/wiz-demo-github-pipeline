@@ -34,7 +34,7 @@ jobs:
         file: Containerfile # Or Containerfile, adjust as needed
         push: false
         load: true
-        tags: $TAG # You can customize the tag
+        tags: ${{ env.TAG }}
 
     - name: Download Wiz CLI
       run: curl -o wizcli https://downloads.wiz.io/wizcli/latest/wizcli-linux-amd64 && chmod +x wizcli

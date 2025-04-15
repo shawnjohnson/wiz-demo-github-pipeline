@@ -17,10 +17,19 @@ jobs:
       SCAN_PATH: "." # Set the relative path in the repo to build the image from
       TAG: "my-app:latest" # Set the tag to use for the image
       POLICY: "Default vulnerabilities policy" # Set the desired Wiz CLI policy to use
+      REGISTRY: ghcr.io
+      IMAGE_NAME: ${{ github.repository }}
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
+
+    - name: Log in to the Container registry
+      uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Set up Docker Buildx
       id: buildx
@@ -49,6 +58,16 @@ jobs:
       id: wiz-scan
       # run: ./wizcli docker scan --image $TAG --policy "$POLICY"
       run: ./wizcli docker scan --image $TAG --output wiz-vuln-scan.sarif,sarif
+
+    - name: Push Container Image
+      id: push-image
+      uses: docker/build-push-action@v5
+      with:
+        context: . # Assuming Dockerfile/Containerfile is in the root
+        file: Containerfile
+        push: true
+        load: true
+        tags: ${{ env.TAG }}
 
     - name: Fetch digest of Docker image for Graph enrichment
       run: ./wizcli docker tag --image $TAG

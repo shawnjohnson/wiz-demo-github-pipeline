@@ -1,0 +1,60 @@
+name: Build and Scan Container Image
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # Required for SARIF upload
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Container Image
+      id: build-image
+      uses: docker/build-push-action@v5
+      with:
+        context: . # Assuming Dockerfile/Containerfile is in the root
+        file: Containerfile # Or Containerfile, adjust as needed
+        push: false
+        load: true
+        tags: my-app:latest # You can customize the tag
+
+    - name: Download Wiz CLI
+      run: curl -o wizcli https://downloads.wiz.io/wizcli/latest/wizcli-linux-amd64 && chmod +x wizcli
+
+    - name: Authenticate to Wiz
+      run: ./wizcli auth --id "$WIZ_CLIENT_ID" --secret "$WIZ_CLIENT_SECRET"
+      env:
+        WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
+        WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
+
+    - name: Run wiz-cli docker image scan
+      run: ./wizcli docker scan --image $TAG --policy "$POLICY"
+
+    - name: Fetch digest of Docker image for Graph enrichment
+      run: ./wizcli docker tag --image $TAG
+
+    - name: Run wizcli Scan
+      id: wiz-scan
+      run: |
+        echo "Scanning container image..."
+        # Replace 'my-app:latest' with the actual image name/tag
+        wizcli image scan --format sarif --output report.sarif my-app:latest
+        echo "Scan completed. SARIF report generated at report.sarif"
+
+    - name: Upload SARIF results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: report.sarif

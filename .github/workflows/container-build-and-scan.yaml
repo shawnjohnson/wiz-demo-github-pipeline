@@ -42,7 +42,7 @@ jobs:
       with:
         context: . # Assuming Dockerfile/Containerfile is in the root
         file: Containerfile # Or Containerfile, adjust as needed
-        push: true
+        push: false
         load: true
         tags: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}"
 

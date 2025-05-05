@@ -1,0 +1,60 @@
+name: "wiz-cli-nerdctl-layer-scanning"
+on: 
+  workflow_dispatch:
+
+jobs:
+  wiz-cli-image-scan:
+    name: "Wiz-cli Image Scan"
+    runs-on: ubuntu-latest
+    env:
+      SCAN_PATH: "." # Set the relative path in the repo to build the image from
+      TAG: "postgres:15.3" # Set the tag to use for the image
+      POLICY: "Default vulnerabilities policy" # Set the desired Wiz CLI policy to use
+      DOCKER_HOST: unix:///var/run/containerd/containerd.sock
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # Checkout the repository to the GitHub Actions runner
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Install containerd and nerdctl
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y containerd curl
+
+          # Download nerdctl
+          curl -LO https://github.com/containerd/nerdctl/releases/download/v1.7.5/nerdctl-1.7.5-linux-amd64.tar.gz
+          tar -xvf nerdctl-1.7.5-linux-amd64.tar.gz
+          sudo mv nerdctl /usr/local/bin/
+
+          # Start containerd
+          sudo systemctl enable containerd
+          sudo systemctl start containerd
+
+          nerdctl --version
+
+      - name: Pull Container image
+        run: sudo nerdctl pull $TAG
+
+      - name: Output tool info
+        run: sudo nerdctl info
+
+      - name: Download Wiz CLI
+        run: curl -o wizcli https://downloads.wiz.io/wizcli/latest/wizcli-linux-amd64 && chmod +x wizcli
+
+      - name: Authenticate to Wiz
+        run: sudo DOCKER_HOST="$DOCKER_HOST" ./wizcli auth --id "$WIZ_CLIENT_ID" --secret "$WIZ_CLIENT_SECRET"
+        env:
+          WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
+          WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
+
+      - name: Run wiz-cli docker image scan
+        run: sudo DOCKER_HOST="$DOCKER_HOST" ./wizcli docker scan --image $TAG --policy "$POLICY" --driver mountWithLayers
+
+      - name: Fetch digest of Docker image for Graph enrichment
+        run: sudo DOCKER_HOST="$DOCKER_HOST" ./wizcli docker tag --image $TAG

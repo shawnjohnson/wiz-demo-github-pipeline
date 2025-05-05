@@ -58,13 +58,17 @@ jobs:
         WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
         WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
 
+    - name: Docker Info
+      run: docker info
+
     - name: Run wiz-cli docker image scan
       id: wiz-scan
       # run: ./wizcli docker scan --image $TAG --policy "$POLICY"
       run: |
         ./wizcli docker scan --image "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}" \
          --output wiz-vuln-scan.sarif,sarif \
-         --policy "$POLICY"
+         --policy "$POLICY" \
+         --driver mountWithLayers
 
     - name: Upload SARIF results to GitHub Security
       uses: github/codeql-action/upload-sarif@v3

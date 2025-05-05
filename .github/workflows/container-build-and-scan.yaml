@@ -65,7 +65,7 @@ jobs:
       id: wiz-scan
       # run: ./wizcli docker scan --image $TAG --policy "$POLICY"
       run: |
-        ./wizcli docker scan --image "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}" \
+        sudo ./wizcli docker scan --image "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}" \
          --output wiz-vuln-scan.sarif,sarif \
          --policy "$POLICY" \
          --driver mountWithLayers

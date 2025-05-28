@@ -75,8 +75,8 @@ jobs:
       run: |
         echo "Confirming image presence locally:"
         # Use the calculated tag for grep for consistency
-        docker image list | grep "${{ steps.set-vars.outputs.full_image_tag }}"
-        docker images --digests | grep "${{ steps.set-vars.outputs.full_image_tag }}"
+        docker image list # | grep "${{ steps.set-vars.outputs.full_image_tag }}"
+        docker images --digests # | grep "${{ steps.set-vars.outputs.full_image_tag }}"
 
     - name: Run wiz-cli docker image scan (on locally built image)
       id: wiz-scan

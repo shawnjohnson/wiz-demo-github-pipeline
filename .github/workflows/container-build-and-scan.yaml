@@ -108,4 +108,5 @@ jobs:
         echo "Listing local docker images with digests after push:"
         docker images --digests
         # Use the calculated tag
-        ./wizcli docker tag --image "${{ steps.set-vars.outputs.full_image_tag }}"
+        # Sudo required to access the image mapping tmp file from wizcli docker scan mountWithLayers
+        sudo ./wizcli docker tag --image "${{ steps.set-vars.outputs.full_image_tag }}"

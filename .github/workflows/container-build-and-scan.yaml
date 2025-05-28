@@ -23,6 +23,8 @@ jobs:
       POLICY: "shawnjohnson-build-audit-only" # Set the desired Wiz CLI policy to use
       REGISTRY: ghcr.io
       IMAGE_NAME: ${{ github.repository }}
+      FULL_IMAGE_NAME_TAG: ${{ env.REGISTRY }}/${{ github.repository }}:${{ env.TAG }} # Define this for clarity
+
 
     steps:
     - name: Checkout Repository
@@ -68,11 +70,9 @@ jobs:
 
     - name: Run wiz-cli docker image scan
       id: wiz-scan
-      # run: ./wizcli docker scan --image $TAG --policy "$POLICY"
       run: |
-        sudo ./wizcli auth --id "$WIZ_CLIENT_ID" --secret "$WIZ_CLIENT_SECRET"
         # sudo is required to ensure access to host file systems where the layer data is present
-        sudo ./wizcli docker scan --image "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}" \
+        sudo ./wizcli docker scan --image "${{ env.FULL_IMAGE_NAME_TAG }}" \
          --output wiz-vuln-scan.sarif,sarif \
          --policy "$POLICY" \
          --driver mountWithLayers

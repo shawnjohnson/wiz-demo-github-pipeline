@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-scan:
-    name: "Wiz-cli Demo Build and Scan Container Image"
+    name: "Wiz-cli Image Scan"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -18,16 +18,27 @@ jobs:
       # only required for workflows in private repositories
       actions: read
     env:
-      SCAN_PATH: "." # Set the relative path in the repo to build the image from
-      TAG: "latest" # Set the tag to use for the image
-      POLICY: "shawnjohnson-build-audit-only" # Set the desired Wiz CLI policy to use
-      REGISTRY: ghcr.io
-      FULL_IMAGE_NAME_TAG: "${{ env.REGISTRY }}/${{ github.repository }}:${{ env.TAG }}" # Define this for clarity
-
+      SCAN_PATH: "."
+      TAG: "latest"
+      POLICY: "shawnjohnson-build-audit-only"
+      REGISTRY: ghcr.io # REGISTRY can stay here as it's a fixed value
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
+
+    - name: Set Derived Variables # New step to calculate and expose variables
+      id: set-vars # Give this step an ID to reference its outputs
+      run: |
+        # Calculate the full image name and tag
+        # Note: env.REGISTRY, github.repository, and env.TAG are fully resolved here
+        FULL_IMAGE_TAG="${{ env.REGISTRY }}/${{ github.repository }}:${{ env.TAG }}"
+        echo "Calculated Full Image Tag: $FULL_IMAGE_TAG"
+        
+        # Export this as an output for subsequent steps
+        # The format is 'echo "::set-output name=<output_name>::<value>"' for older runners
+        # For newer runners (like ubuntu-latest), use GITHUB_OUTPUT file
+        echo "full_image_tag=$FULL_IMAGE_TAG" >> "$GITHUB_OUTPUT" 
 
     - name: Log in to the Container registry
       uses: docker/login-action@v3
@@ -40,19 +51,16 @@ jobs:
       id: buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build Container Image
+    - name: Build Container Image (and load locally for scan)
       id: build-image
       uses: docker/build-push-action@v6
       with:
-        context: . # Assuming Dockerfile/Containerfile is in the root
-        file: Containerfile # Or Containerfile, adjust as needed
-        # Important: Only push after security scans pass
+        context: .
+        file: Containerfile
         push: false
-        # Important: Load the built image into the local Docker daemon
         load: true
-        tags: "${{ env.FULL_IMAGE_NAME_TAG }}"
-        # Output the image digest, which can be useful later for verification if needed
-        outputs: type=image,name=${{ env.FULL_IMAGE_NAME_TAG }},push=false
+        # Use the output from the 'set-vars' step
+        tags: "${{ steps.set-vars.outputs.full_image_tag }}"
 
     - name: Download Wiz CLI
       run: curl -o wizcli https://downloads.wiz.io/wizcli/latest/wizcli-linux-amd64 && chmod +x wizcli
@@ -63,15 +71,19 @@ jobs:
         WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
         WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
 
-    - name: Docker Info
-      # Debugging docker tooling
-      run: docker info
+    - name: Docker Info (confirm local image presence)
+      run: |
+        echo "Confirming image presence locally:"
+        # Use the calculated tag for grep for consistency
+        docker image list | grep "${{ steps.set-vars.outputs.full_image_tag }}"
+        docker images --digests | grep "${{ steps.set-vars.outputs.full_image_tag }}"
 
-    - name: Run wiz-cli docker image scan
+    - name: Run wiz-cli docker image scan (on locally built image)
       id: wiz-scan
       run: |
-        # sudo is required to ensure access to host file systems where the layer data is present
-        sudo ./wizcli docker scan --image "${{ env.FULL_IMAGE_NAME_TAG }}" \
+        sudo ./wizcli auth --id "$WIZ_CLIENT_ID" --secret "$WIZ_CLIENT_SECRET"
+        # Use the calculated tag
+        sudo ./wizcli docker scan --image "${{ steps.set-vars.outputs.full_image_tag }}" \
          --output wiz-vuln-scan.sarif,sarif \
          --policy "$POLICY" \
          --driver mountWithLayers
@@ -86,10 +98,8 @@ jobs:
         sarif_file: wiz-vuln-scan.sarif
 
     - name: Push Container Image (only after successful scan)
-      # This step uses a direct 'docker push' command.
-      # It pushes the image that was already built and loaded locally in the first step.
-      # This entirely avoids triggering a second build.
-      run: docker push "${{ env.FULL_IMAGE_NAME_TAG }}"
+      # Use the calculated tag
+      run: docker push "${{ steps.set-vars.outputs.full_image_tag }}"
 
     - name: Fetch digest of Docker image for Graph enrichment
       run: |
@@ -97,6 +107,5 @@ jobs:
         docker image list
         echo "Listing local docker images with digests after push:"
         docker images --digests
-        # Now the image has been pushed, and its digest is stable.
-        ./wizcli docker tag --image "${{ env.FULL_IMAGE_NAME_TAG }}"
-
+        # Use the calculated tag
+        ./wizcli docker tag --image "${{ steps.set-vars.outputs.full_image_tag }}"

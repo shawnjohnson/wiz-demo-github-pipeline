@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-scan:
-    name: "Wiz-cli Image Scan"
+    name: "Wiz-cli Demo Build and Scan Container Image"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -45,9 +45,13 @@ jobs:
       with:
         context: . # Assuming Dockerfile/Containerfile is in the root
         file: Containerfile # Or Containerfile, adjust as needed
+        # Important: Only push after security scans pass
         push: false
+        # Important: Load the built image into the local Docker daemon
         load: true
         tags: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}"
+        # Output the image digest, which can be useful later for verification if needed
+        outputs: type=image,annotation=org.opencontainers.image.base.name=${{ env.IMAGE_NAME }}
 
     - name: Download Wiz CLI
       run: curl -o wizcli https://downloads.wiz.io/wizcli/latest/wizcli-linux-amd64 && chmod +x wizcli
@@ -59,6 +63,7 @@ jobs:
         WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
 
     - name: Docker Info
+      # Debugging docker tooling
       run: docker info
 
     - name: Run wiz-cli docker image scan
@@ -66,6 +71,7 @@ jobs:
       # run: ./wizcli docker scan --image $TAG --policy "$POLICY"
       run: |
         sudo ./wizcli auth --id "$WIZ_CLIENT_ID" --secret "$WIZ_CLIENT_SECRET"
+        # sudo is required to ensure access to host file systems where the layer data is present
         sudo ./wizcli docker scan --image "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}" \
          --output wiz-vuln-scan.sarif,sarif \
          --policy "$POLICY" \
@@ -80,15 +86,18 @@ jobs:
       with:
         sarif_file: wiz-vuln-scan.sarif
 
-    - name: Push Container Image
-      uses: docker/build-push-action@v6
-      with:
-        push: true
-        tags: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}"
+    - name: Push Container Image (only after successful scan)
+      # This step uses a direct 'docker push' command.
+      # It pushes the image that was already built and loaded locally in the first step.
+      # This entirely avoids triggering a second build.
+      run: docker push "${{ env.FULL_IMAGE_NAME_TAG }}"
 
     - name: Fetch digest of Docker image for Graph enrichment
       run: |
+        echo "Listing local docker images after push:"
         docker image list
+        echo "Listing local docker images with digests after push:"
         docker images --digests
-        ./wizcli docker tag --image "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}"
+        # Now the image has been pushed, and its digest is stable.
+        ./wizcli docker tag --image "${{ env.FULL_IMAGE_NAME_TAG }}"
 

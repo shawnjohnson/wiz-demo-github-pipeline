@@ -87,5 +87,8 @@ jobs:
         tags: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}"
 
     - name: Fetch digest of Docker image for Graph enrichment
-      run: ./wizcli docker tag --image "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}"
+      run: |
+        docker image list
+        docker images --digests
+        ./wizcli docker tag --image "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}"
 

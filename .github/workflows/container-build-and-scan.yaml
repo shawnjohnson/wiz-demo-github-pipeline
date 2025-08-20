@@ -90,9 +90,9 @@ jobs:
     - name: Post scan summary to Actions Summary (optional, requires script)
       continue-on-error: true
       run: |
-        result=$(echo "Scan Result:" $(cat output.json | jq .status.verdict))
+        result=$(echo "Wiz Scan Result:" $(cat wiz-vuln-scan.json | jq .status.verdict))
         echo $result >> $GITHUB_STEP_SUMMARY
-        link=$(echo "Report Link:" $(cat output.json | jq .reportUrl))
+        link=$(echo "Wiz Report Link:" $(cat wiz-vuln-scan.json | jq .reportUrl))
         echo $link >> $GITHUB_STEP_SUMMARY
 
     - name: Push Container Image
@@ -102,5 +102,6 @@ jobs:
         tags: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}"
 
     - name: Fetch digest of Docker image for Graph enrichment
+      continue-on-error: true
       run: ./wizcli docker tag --image "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}"
 

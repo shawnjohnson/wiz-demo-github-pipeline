@@ -82,7 +82,7 @@ jobs:
         sarif_file: wiz-vuln-scan.sarif
 
     - name: Upload scan results as artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: wiz-vuln-scan-results
         path: wiz-vuln-scan.json

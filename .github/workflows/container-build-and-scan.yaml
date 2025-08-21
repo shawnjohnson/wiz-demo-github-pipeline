@@ -95,7 +95,7 @@ jobs:
         link=$(echo "Wiz Report Link:" $(cat wiz-vuln-scan.json | jq .reportUrl))
         echo $link >> $GITHUB_STEP_SUMMARY
         chmod +x .github/workflows/wiz-scan-report-summary.sh
-        wiz-vuln-summary=$(.github/workflows/wiz-scan-report-summary.sh.sh wiz-vuln-scan.json)
+        wiz-vuln-summary=$(.github/workflows/wiz-scan-report-summary.sh wiz-vuln-scan.json)
         echo $wiz-vuln-summary >> $GITHUB_STEP_SUMMARY
 
     - name: Push Container Image

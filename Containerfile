@@ -26,6 +26,17 @@ RUN apk add ca-certificates
 
 COPY --from=build_base /tmp/go-sample-app/out/go-sample-app /app/go-sample-app
 
+# Add additional files (Testing Secret and Sensitive Data Detection)
+COPY .credentials /app/.credentials
+COPY awssecret.json /app/awssecret.json
+COPY db_connections1.jsonl /app/db_connections1.jsonl
+COPY secret.yaml /app/secret.yaml
+COPY secrets.env /app/secrets.env
+COPY prod-data.csv /app/prod-data.csv
+
+
+
+
 # This container exposes port 8080 to the outside world
 EXPOSE 8080
 

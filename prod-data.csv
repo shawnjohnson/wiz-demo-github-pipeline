@@ -1,0 +1,7 @@
+# Generate CSV data to mock senstive data including name, email, and phone number
+name,email,phone
+Alice Johnson,alice.johnson@example.com,555-123-4567
+Bob Smith,bob.smith@example.com,555-234-5678
+Carol Lee,carol.lee@example.com,555-345-6789
+David Kim,david.kim@example.com,555-456-7890
+Eva Chen,eva.chen@example.com,555-567-8901

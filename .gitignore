@@ -1,2 +1,3 @@
 secrets.env
 wiz-vuln-scan.sarif
+wiz-vuln-scan.json

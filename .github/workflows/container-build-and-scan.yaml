@@ -90,10 +90,6 @@ jobs:
     - name: Post scan summary to Actions Summary (optional, requires script)
       continue-on-error: true
       run: |
-        result=$(echo "Wiz Scan Result:" $(cat wiz-vuln-scan.json | jq .status.verdict))
-        echo $result >> $GITHUB_STEP_SUMMARY
-        link=$(echo "Wiz Report Link:" $(cat wiz-vuln-scan.json | jq .reportUrl))
-        echo $link >> $GITHUB_STEP_SUMMARY
         chmod +x .github/workflows/wiz-scan-report-summary.sh
         wiz_vuln_summary=$(bash .github/workflows/wiz-scan-report-summary.sh wiz-vuln-scan.json)
         echo "$wiz_vuln_summary" >> "$GITHUB_STEP_SUMMARY"

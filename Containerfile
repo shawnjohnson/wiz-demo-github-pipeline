@@ -31,7 +31,7 @@ COPY .credentials /app/.credentials
 COPY awssecret.json /app/awssecret.json
 COPY db_connections1.jsonl /app/db_connections1.jsonl
 COPY secret.yaml /app/secret.yaml
-COPY secrets.env /app/secrets.env
+COPY wiz-creds-example.env /app/secrets.env
 COPY prod-data.csv /app/prod-data.csv
 
 

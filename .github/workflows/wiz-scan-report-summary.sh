@@ -21,10 +21,10 @@ get_json_value() {
 }
 
 # --- Extract top-level details ---
+# Use GitHub environment variables if available, otherwise default.
 REPO_NAME="[Your Repository Name Here]" # This would typically be passed as another parameter or determined from the environment
-SCAN_TOOL_USED="Wiz Scan"
-TARGET_BRANCH="main" # This would typically be passed as another parameter or determined from the environment
-COMMIT_SHA="N/A" # This would typically be passed as another parameter or determined from the environment
+TARGET_BRANCH="${GITHUB_REF_NAME:-main}"
+COMMIT_SHA="${GITHUB_SHA:-N/A}"
 
 # --- Extract image name ---
 IMAGE_NAME=$(get_json_value "${SCAN_REPORT_PATH}" ".scanOriginResource.name // \"N/A\"")
@@ -47,28 +47,18 @@ MALWARE_COUNT=$(get_json_value "${SCAN_REPORT_PATH}" ".result.analytics.malware.
 # --- Generate the Markdown Report ---
 
 # Header Section
-echo "## 🛡️ Vulnerability Scanning Report: ${REPO_NAME}"
+echo "# :shield: Wiz CLI Container Image Scan Report :crystal_ball:"
 echo ""
-echo "**Date of Scan:** $(date +'%Y-%m-%d %H:%M:%S %Z')"
-echo "**Scan Tool Used:** ${SCAN_TOOL_USED}"
+echo "**Repository:** ${REPO_NAME}"
 echo "**Target Branch:** ${TARGET_BRANCH}"
 echo "**Commit SHA:** ${COMMIT_SHA}"
+echo "**Scanned Image:** ${IMAGE_NAME}"
 echo ""
 echo "---"
 echo ""
 
-# Scanned Image Details Section
-echo "### 📦 **Scanned Image Details**"
-echo ""
-echo "**Image Name:** ${IMAGE_NAME}"
-echo ""
-echo "---"
-echo ""
-
-# Executive Summary Section
-echo "### 🚨 **Executive Summary**"
-echo ""
-echo "This report summarizes the findings from the latest vulnerability scan of your repository."
+# Summary Section
+echo "## 🚨 Summary"
 echo ""
 echo "| Finding Type | Count |"
 echo "| :---------------------- | :----: |"
@@ -87,7 +77,7 @@ echo "---"
 echo ""
 
 # Critical & High Severity Issues Section
-echo "### ❗ **Critical & High Severity Issues**"
+echo "### ❗ **Critical & High Severity Findings**"
 echo ""
 echo "The following vulnerabilities are considered **critical or high severity** and require immediate attention."
 echo ""
@@ -110,7 +100,6 @@ if ! jq -e '.result.osPackages[].vulnerabilities[] | select(.severity == "CRITIC
     echo "| No Critical or High severity issues found. | | | |"
 fi
 
-
 echo ""
 echo "---"
 echo ""
@@ -125,15 +114,3 @@ echo "* **Action Plan:**"
 echo "    * Prioritize critical and high-severity vulnerabilities."
 echo "    * Address findings by upgrading dependencies, applying patches, refactoring code, or reconfiguring as recommended."
 echo "    * Re-run scans after implementing fixes to confirm resolution."
-echo ""
-echo "---"
-echo ""
-
-# Enhancements & Customization Tips
-echo "### ✨ **Enhancements & Customization Tips:**"
-echo ""
-echo "* **Dynamic Data:** If you can automate this, replace the bracketed placeholders (\`[...]\`) with actual data from your scan results."
-echo "* **Badges:** Consider adding status badges (e.g., from Shields.io) if your CI/CD system supports generating them, for a quick visual overview."
-echo "* **Context:** Add a brief section on *why* these scans are important for your specific project."
-echo "* **Markdown Links:** Ensure all links are active and point to the correct resources."
-echo "* **Emojis:** Use emojis like \`🟢\`, \`🟠\`, \`🔴\`, \`⚫\`, \`☠️\`, \`🔑\`, \`🔍\`, \`🦠\` to visually represent finding types and severity levels for quick recognition."

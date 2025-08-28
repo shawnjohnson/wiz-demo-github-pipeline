@@ -20,12 +20,6 @@ get_json_value() {
     jq -r "${2}" "$1"
 }
 
-# --- Extract top-level details ---
-# Use GitHub environment variables if available, otherwise default.
-REPO_NAME="[Your Repository Name Here]" # This would typically be passed as another parameter or determined from the environment
-TARGET_BRANCH="${GITHUB_REF_NAME:-main}"
-COMMIT_SHA="${GITHUB_SHA:-N/A}"
-
 # --- Extract image name ---
 IMAGE_NAME=$(get_json_value "${SCAN_REPORT_PATH}" ".scanOriginResource.name // \"N/A\"")
 
@@ -49,9 +43,6 @@ MALWARE_COUNT=$(get_json_value "${SCAN_REPORT_PATH}" ".result.analytics.malware.
 # Header Section
 echo "# :shield: Wiz CLI Container Image Scan Report :crystal_ball:"
 echo ""
-echo "**Repository:** ${REPO_NAME}"
-echo "**Target Branch:** ${TARGET_BRANCH}"
-echo "**Commit SHA:** ${COMMIT_SHA}"
 echo "**Scanned Image:** ${IMAGE_NAME}"
 echo ""
 echo "---"

@@ -1,4 +1,4 @@
-FROM golang:1.24 AS build_base
+FROM golang:1.25.3 AS build_base
 
 # RUN apk add --no-cache git
 # RUN apk add --no-cache --update build-base

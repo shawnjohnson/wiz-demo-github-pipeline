@@ -94,11 +94,10 @@ jobs:
         wiz_vuln_summary=$(bash .github/workflows/wiz-scan-report-summary.sh wiz-vuln-scan.json)
         echo "$wiz_vuln_summary" >> "$GITHUB_STEP_SUMMARY"
 
+    # Push the exact image that was built and scanned above (no rebuild)
     - name: Push Container Image
-      uses: docker/build-push-action@v6
-      with:
-        push: true
-        tags: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}"
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}"
 
     - name: Fetch digest of Docker image for Graph enrichment
       continue-on-error: true
